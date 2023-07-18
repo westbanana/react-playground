@@ -21,9 +21,25 @@ const App = () => {
       preCaretRange.selectNodeContents(divRef.current);
       preCaretRange.setEnd(range.endContainer, range.endOffset);
       position = preCaretRange.toString().length;
+
+      // Handle cases where the divRef element contains multiple child nodes
+      let container = range.endContainer;
+      while (container !== divRef.current) {
+        for (let i = 0; i < container.previousSibling; i++) {
+          position += container.previousSibling[i].textContent.length;
+        }
+        container = container.parentNode;
+      }
+
+      // Handle cases where the caret is at the end of the divRef element
+      if (range.endContainer === divRef.current && range.endOffset === divRef.current.childNodes.length) {
+        position += divRef.current.lastChild.textContent.length;
+      }
     }
     return position;
   };
+
+
 
   const handleMouseEnter = () => {
     divRef.current.focus();
@@ -31,6 +47,13 @@ const App = () => {
     // Restore the caret position
     const selection = window.getSelection();
     const range = document.createRange();
+
+    // Check if the divRef element is empty
+    if (divRef.current.firstChild === null) {
+      // Insert a text node into the divRef element
+      divRef.current.appendChild(document.createTextNode(''));
+    }
+
     range.setStart(divRef.current.firstChild, caretPosition);
     range.collapse(true);
     selection.removeAllRanges();
@@ -46,6 +69,13 @@ const App = () => {
     // Insert the new span element at the last known caret position
     const selection = window.getSelection();
     const range = document.createRange();
+
+    // Check if the divRef element is empty
+    if (divRef.current.firstChild === null) {
+      // Insert a text node into the divRef element
+      divRef.current.appendChild(document.createTextNode(''));
+    }
+
     range.setStart(divRef.current.firstChild, caretPosition);
     range.collapse(true);
     range.insertNode(newSpan);
@@ -58,11 +88,19 @@ const App = () => {
   };
 
 
-
   const handleMouseLeave = () => {
     setCaretPosition(getCaretPosition());
     divRef.current.blur();
   }
+
+  const handleInput = () => {
+    setCaretPosition(getCaretPosition());
+  };
+
+  const handleBlur = () => {
+    setCaretPosition(getCaretPosition());
+  };
+
   return (
     <div>
       <div
@@ -76,6 +114,8 @@ const App = () => {
         ref={divRef}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
+        onInput={handleInput}
+        onBlur={handleBlur}
       />
       {macroses.map((macros) => (
         <div
